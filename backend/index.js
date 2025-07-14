@@ -28,6 +28,16 @@ app.get('/', (req, res) => {
 app.use('/api/user',userRoutes)
 app.use('/api/task',taskRoutes)
 
+app.use((err, req, res, next) => {
+  if (err) {
+    console.error(err.stack); 
+    res.status(500).json({ error: "Server error" });
+  } else {
+    next();
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })

@@ -22,7 +22,20 @@ export const createTask = async (req, res) => {
 // Get all blogs
 export const getAllTask = async (req, res) => {
   try {
-    const task = await Task.find({delete_status:false})
+    const { search, status } = req.query;
+
+  let query = {
+    delete_status: false,
+  };
+
+  if (search) {
+    query.title = { $regex: search, $options: "i" };
+  }
+
+  if (status) {
+    query.done = status === "completed" ? true : false;
+  }
+    const task = await Task.find(query)
     res.status(200).json({success:true,message:"Task retrieved successfully",response:task});
   } catch (err) {
     res.status(500).json({ error: err.message });

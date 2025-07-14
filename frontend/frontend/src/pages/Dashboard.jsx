@@ -2,17 +2,22 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import axios from "../api/axios";
 import TaskCard from "../components/TaskCard";
+import { toast } from "react-toastify";
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // ✅ Fetch all tasks from backend
   const fetchTasks = async () => {
     try {
-      const { data } = await axios.get("/api/task");
-      setTasks(data.response); // Adjust this if your backend response format is different
+      const { data } = await axios.get("/api/task", {
+        params: { search: searchTerm },
+      });
+      setTasks(data.response); // Your backend sends `response` array
     } catch (err) {
       console.error("Error fetching tasks:", err);
+      toast.error("Failed to fetch tasks");
     }
   };
 
@@ -25,16 +30,19 @@ const Dashboard = () => {
       fetchTasks(); // Refresh list after update
     } catch (err) {
       console.error("Error toggling task:", err);
+      toast.error("Failed to update task");
     }
   };
 
-  // ✅ Delete task (optional usage)
+  // ✅ Delete task
   const deleteTask = async (id) => {
     try {
       await axios.delete(`/api/task/${id}`);
       fetchTasks();
+      toast.success("Task deleted");
     } catch (err) {
       console.error("Error deleting task:", err);
+      toast.error("Failed to delete task");
     }
   };
 
@@ -62,28 +70,43 @@ const Dashboard = () => {
           </div>
         </div>
 
-       {/* Task List */}
-<div className="space-y-4">
-  {Array.isArray(tasks) && tasks.length > 0 ? (
-    tasks.map((task) => (
-      <TaskCard
-        key={task._id}
-        title={task.title}
-        description={task.description}
-        icon={task.icon || "📖"}
-        color={task.color || "bg-yellow-100"}
-        completed={task.done}
-        onToggle={() => toggleComplete(task)}
-        onDelete={() => deleteTask(task._id)} // optional
-      />
-    ))
-  ) : (
-    <p className="text-gray-500">No tasks found.</p>
-  )}
-</div>
+        {/* 🔍 Search Input */}
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && fetchTasks()}
+            className="border px-4 py-2 rounded w-full shadow-sm"
+          />
+        </div>
 
+        {/* 📋 Task List */}
+        <div className="space-y-4">
+          {Array.isArray(tasks) && tasks.length > 0 ? (
+            tasks.map((task) => (
+              <TaskCard
+                key={task._id}
+                title={task.title}
+                description={task.description}
+                icon={task.icon || "📖"}
+                color={task.color || "bg-yellow-100"}
+                completed={task.done}
+                onToggle={() => toggleComplete(task)}
+                onDelete={() => deleteTask(task._id)}
+                onUpdate={() => {
+                  // Optional: redirect to update page
+                  window.location.href = `/update-task/${task._id}`;
+                }}
+              />
+            ))
+          ) : (
+            <p className="text-gray-500">No tasks found.</p>
+          )}
+        </div>
 
-        {/* Add New Task Button */}
+        {/* ➕ Add New Task Button */}
         <button
           className="fixed bottom-6 right-6 bg-white text-xl p-4 shadow-lg rounded-full hover:shadow-xl"
           onClick={() => {
